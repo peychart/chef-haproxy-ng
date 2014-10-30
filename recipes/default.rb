@@ -109,7 +109,7 @@ if node["haproxy"] && node["haproxy"].any?
         if name != 'defaults' && name != 'bind' && name != 'pool_members'
 
           if i.is_a? Array
-               i.each do |i|; option << "#{name} #{i}"; end
+               i.each do |i|; options << "#{name} #{i}"; end
           else options << "#{name} #{i}"
           end
 
