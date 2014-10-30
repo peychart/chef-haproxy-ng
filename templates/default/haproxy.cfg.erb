@@ -1,0 +1,38 @@
+global
+  log 127.0.0.1   local0
+  log 127.0.0.1   local1 notice
+  #log loghost    local0 info
+  #debug
+  #quiet
+  maxconn <%= node['haproxy']['global_max_connections'] %>
+  user <%= node['haproxy']['user'] %>
+  group <%= node['haproxy']['group'] %>
+<% node['haproxy']['global_options'].sort.each do |option, value| %>
+  <%= options %>
+<% end %>
+
+defaults
+  log     global
+  mode    <%= node['haproxy']['mode'] %>
+  retries 3
+<% node['haproxy']['defaults_timeouts'].sort.map do | value, time | -%>
+  timeout <%= value %> <%= time %>
+<% end -%>
+<% node['haproxy']['defaults_options'].sort.each do | option | -%>
+  option <%= option %>
+<% end -%>
+  mode  <%= node['haproxy']['mode'] %>
+  balance  <%= node['haproxy']['balance_algorithm'] %>
+
+# Set up application listeners here.
+<% @listeners.each do |listener| %>
+<% listener.each do |type, definition | %>
+<% definition.each do |name, options| %>
+<%= type %> <%= name %>
+<% options.each do |option| %>
+  <%= option %>
+<% end %>
+<% end %>
+<% end %>
+
+<% end if @listeners.is_a? Array %>
