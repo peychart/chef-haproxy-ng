@@ -110,9 +110,11 @@ Include `chef-haproxy-ng` in your node's `run_list`:
 ```json
 {
  "override_attributes": {
-    "service": [
-      "haproxyForSquid"
-    ]
+    "chef-serviceAttributes": {
+      "service": [
+        "haproxyForSquid"
+      ]
+    }
   },
   "run_list": [
     "recipe[chef-serviceAttributes::default]",
