@@ -27,7 +27,7 @@ end
 
 # Config file:
 if node["haproxy"] && node["haproxy"].any?
-  haproxy =  node.default["haproxy"]
+  haproxy = node.default["haproxy"]
 
 #include_recipe "haproxy::install_#{node['haproxy']['install_method']}"
 
@@ -64,66 +64,55 @@ if node["haproxy"] && node["haproxy"].any?
     )
   end
 
+  # For each listener:
   listeners=[]
-
-  # Admin definition:
-  if haproxy['admin']['enable']
-    options = []
-    options << "bind #{haproxy['admin']['bind']}"
-    options << 'mode http'
-    haproxy['admin']['options'].each do |i|
-      options << i
-    end
-    listeners << { 'listen' => { 'admin' => options.uniq } }
-  end
-
-  # For each service:
-  haproxy['listeners'].each do |name, listener|
-    if listener.any?
-
-      # getenv(others nodes['app_server_role'] definitions):
-############## SUBSTITUTE WITH A OHAI SEARCH... #################
-      data_bag('clusters').each do |item|
-        if item != node['fqdn'].gsub(".", "_")
-          i = data_bag_item('clusters', item)['haproxy']
-          i = i['listeners'] if i
-          $getEnv.call( haproxy['listeners'][name], i[name] ) if i && i[name]
-        end
-      end
+  haproxy['listener'].each do |listenerName, listenerDef|
+    if listenerDef.any?
 
       # Defaults definition:
-      if listener['defaults'].any?
-        listeners << { 'defaults' => { '' => listener['defaults'] } }
-      end if listener['defaults']
+      if listenerDef['defaults'].any?
+        listeners << { 'defaults' => { '' => listenerDef['defaults'] } }
+      end if defined? listenerDef['defaults']
 
-      # Listen definition:
+      # Listener definition:
       options = []
-      if listener['bind'].is_a? Array
-        listener['bind'].each do |i|
+      if listenerDef['bind'].is_a? Array
+        listenerDef['bind'].each do |i|
            options << "bind #{i}"
         end
-      else options << "bind #{listener['bind']}"
-      end if listener['bind'] && listener['bind']!={}
+      else options << "bind #{listenerDef['bind']}"
+      end if defined? listenerDef['bind']
 
-      listener.each do |name, i|
-        if name != 'defaults' && name != 'bind' && name != 'pool_members'
-
-          if i.is_a? Array
-               i.each do |i|; options << "#{name} #{i}"; end
-          else options << "#{name} #{i}"
+      listenerDef.each do |name, i|
+        if name != 'defaults' && name != 'bind' && name != 'pool_member'
+ 
+          ( (i.is_a? Array) ? i : Array[i] ).each do |j|
+            options << ( name[name.length-1] != '-' ? "#{name} #{j}" : j )
           end
 
         end
       end
 
-      listener['pool_members'].each do |i|
-        options << "server #{i}"
-      end if listener['pool_members']
+      poolMembersDef = listenerDef['pool_member']
+      if poolMembersDef && poolMembersDef != {}
+        options << "server #{node['fqdn']} #{node['fqdn']}:#{poolMembersDef['bind']} #{poolMembersDef['option']}"
 
-      listeners << { 'listen' => { name => options } } if options.any?
+        # For each server in the Chef database:
+        search("node", "domain:#{node['domain']} AND haproxy:* AND haproxy_listener:*").each do |server|
+          options << "server #{server['fqdn']} #{server['fqdn']}:#{server['haproxy']['listener'][listenerName]['pool_member']['bind']} #{server['haproxy']['listener'][listenerName]['pool_member']['option']}" if server['haproxy']['listener'][listenerName] != {} && server['haproxy']['listener'][listenerName]['pool_member'] != {}
+        end
+
+        poolMembersDef[node['domain']].each do |i|
+          options << i
+        end if poolMembersDef[node['domain']]
+      end
+
+      listeners << { 'listen' => { listenerName => options.uniq } } if options.any?
+      log "haproxy: listener #{listenerName} added..."
 
     end
   end
+  # listerners list is set
 
   template "#{haproxy['conf_dir']}/haproxy.cfg" do
     source 'haproxy.cfg.erb'
@@ -134,5 +123,6 @@ if node["haproxy"] && node["haproxy"].any?
      :listeners => listeners
     )
   end if listeners.any?
+  log "haproxy: configured..."
 
 end
