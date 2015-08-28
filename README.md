@@ -36,7 +36,7 @@
   <tr>
     <td><tt>['chef-haproxy-ng']['listener']</tt></td>
     <td>Hash</td>
-    <td>Set the listeners</td>
+    <td>Sets the listeners</td>
     <td><tt>{}</tt></td>
   </tr>
 </table>
@@ -45,7 +45,7 @@
 
  Configuration can be defined in a data bag "service" (see: https://github.com/peychart/chef-serviceAttributes) where each provided service is described.
 
- This cookbook must be re-executed on each node when adding a new node to the cluster. All nodes found in the same domain (search in ohai database) are added.
+ This cookbook must be re-executed on each existing node when adding a new node to the cluster. All nodes found in the same dnsdomainname (search in ohai database) are added.
 
 eg:
 <pre>
@@ -71,14 +71,14 @@ eg:
           "httpchk HEAD http://squid:80/ HTTP/1.0",
           "allbackups"
         ],
-        "pool_member": {		// members of this listener (all the nodes with this same definition 'squid' found in the ohai database will be added).
+        "pool_member": {		// Members of this listener (all the nodes with this same definition 'squid' found in the ohai database will be added).
           "bind": 3128,
           "option": "check inter 10s",
-          "toriki.srv.gov.pf": [	// if the current domain is "toriki.srv.gov.pf": add this list of foreign members...
+          "toriki.srv.gov.pf": [	// If the current dnsdomainname is "toriki.srv.gov.pf": add this list of foreign members...
             "server squid1.a1a2.srv.gov.pf squid1.a1a2.srv.gov.pf:3128 check inter 10s backup",
             "server squid2.a1a2.srv.gov.pf squid2.a1a2.srv.gov.pf:3128 check inter 10s backup"
           ],
-          "a1a2.srv.gov.pf": [		// if the current domain is "a1a2.srv.gov.pf": add this list of foreign members...
+          "a1a2.srv.gov.pf": [		// If the current dnsdomainname is "a1a2.srv.gov.pf": add this list of foreign members...
             "server squid1.toriki.srv.gov.pf squid1.toriki.srv.gov.pf:3128 check inter 10s backup",
             "server squid2.toriki.srv.gov.pf squid2.toriki.srv.gov.pf:3128 check inter 10s backup"
           ]
