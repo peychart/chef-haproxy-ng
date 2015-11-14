@@ -99,8 +99,8 @@ if node["haproxy"] && node["haproxy"].any?
 
         # For each server in the Chef database:
         search("node", "domain:#{node['domain']} AND haproxy:* AND haproxy_listener:*").each do |server|
-          backup = (server['haproxy']['listener'][listenerName]['pool_member']['othersAreBackup'] ? ' backup' : '')
           if server['haproxy']['listener'][listenerName] && server['haproxy']['listener'][listenerName] != {} && server['haproxy']['listener'][listenerName]['pool_member'] != {}
+            backup = (server['haproxy']['listener'][listenerName]['pool_member']['othersAreBackup'] ? ' backup' : '')
             options << "server #{server['fqdn']} #{server['fqdn']}:#{server['haproxy']['listener'][listenerName]['pool_member']['bind']} #{server['haproxy']['listener'][listenerName]['pool_member']['option']}#{backup}"
           end
         end
